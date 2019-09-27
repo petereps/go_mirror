@@ -42,7 +42,7 @@ func New(primaryServer, mirrorServer string) (*Mirror, error) {
 
 func (m *Mirror) mirror(proxyReq *http.Request) {
 	entry := logrus.WithField("url", proxyReq.URL.String())
-
+	entry.Infoln("mirroring")
 	response, err := m.client.Do(proxyReq)
 	if err != nil {
 		entry.WithError(err).
@@ -71,6 +71,7 @@ func (m *Mirror) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mirroredURL := r.URL
+
 	mirroredURL.Host = m.upstreamMirror.Host
 	if mirroredURL.Scheme == "" {
 		mirroredURL.Scheme = "http"

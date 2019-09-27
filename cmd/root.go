@@ -17,8 +17,9 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
+
+	"github.com/petereps/go_mirror/pkg/mirror"
 
 	"github.com/petereps/go_mirror/pkg/config"
 
@@ -45,6 +46,13 @@ var rootCmd = &cobra.Command{
 			panic(err)
 		}
 
+		mirrorProxy, err := mirror.New(cfg.PrimaryServer, cfg.UpstreamMirror)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("Serving on port %d\n", cfg.Port)
+		mirrorProxy.Serve(fmt.Sprintf(":%d", cfg.Port))
 	},
 }
 
@@ -66,6 +74,9 @@ func init() {
 
 	rootCmd.PersistentFlags().
 		StringP("server", "s", "", "Primary server to proxy to (responses will be returned to client)")
+
+	rootCmd.PersistentFlags().
+		IntP("port", "p", 8080, "port to serve the mirror on")
 
 	viper.BindPFlags(rootCmd.PersistentFlags())
 }

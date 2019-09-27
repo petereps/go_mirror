@@ -9,6 +9,7 @@ type Config struct {
 	ConfigFile     string `yaml:"file" mapstructure:"file" toml:"file"`
 	UpstreamMirror string `yaml:"mirror" mapstructure:"mirror" toml:"mirror"`
 	PrimaryServer  string `yaml:"server" mapstructure:"server" toml:"server"`
+	Port           int
 }
 
 // Option configures the configuration struct
