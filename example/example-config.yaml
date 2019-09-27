@@ -1,0 +1,20 @@
+# port that this proxy will listen on
+port: 8080
+
+log-level: debug
+
+mirror:
+  url: https://google.com 
+  headers:
+    - key: X-Mirror-Header
+      value: example-header
+
+primary:
+  url: http://127.0.0.1:8002
+  # copy all primary headers to the mirror
+  do-mirror-headers: true
+  do-mirror-body: true
+
+  headers:
+    - key: X-Primary-Header
+      value: example-header

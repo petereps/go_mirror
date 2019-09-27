@@ -1,5 +1,5 @@
 /*
-Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+Copyright © 2019 PETER EPSTEEN <peterepsteen@gmail.com>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/petereps/go_mirror/pkg/mirror"
@@ -36,8 +37,12 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		opts := []config.Option{}
 
-		if cfgFile := viper.GetString("file"); cfgFile != "" {
-			println(cfgFile)
+		cfgFile := os.Getenv("FILE")
+		if cfgFile == "" {
+			cfgFile, _ = cmd.PersistentFlags().GetString("file")
+		}
+
+		if cfgFile != "" {
 			opts = append(opts, config.WithConfigFile(cfgFile))
 		}
 
@@ -46,13 +51,13 @@ var rootCmd = &cobra.Command{
 			panic(err)
 		}
 
-		mirrorProxy, err := mirror.New(cfg.PrimaryServer, cfg.UpstreamMirror)
+		mirrorProxy, err := mirror.New(cfg)
 		if err != nil {
 			panic(err)
 		}
 
 		fmt.Printf("Serving on port %d\n", cfg.Port)
-		mirrorProxy.Serve(fmt.Sprintf(":%d", cfg.Port))
+		log.Fatal(mirrorProxy.Serve(fmt.Sprintf(":%d", cfg.Port)))
 	},
 }
 
@@ -67,16 +72,35 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().
+		StringP("log-level", "l", "info", "Log level to use. Either error, warn, info, or debug")
+	rootCmd.PersistentFlags().
 		StringP("file", "f", "", "Specify a filepath to load config from")
 
 	rootCmd.PersistentFlags().
-		StringP("mirror", "m", "", "Upstream server to mirror incoming requests to (wont effect the primary servers request)")
+		StringP("mirror-url", "m", "", "Upstream server to mirror incoming requests to (wont effect the primary servers request)")
 
 	rootCmd.PersistentFlags().
-		StringP("server", "s", "", "Primary server to proxy to (responses will be returned to client)")
+		StringP("primary-url", "p", "", "Primary server to proxy to (responses will be returned to client)")
 
 	rootCmd.PersistentFlags().
-		IntP("port", "p", 8080, "port to serve the mirror on")
+		IntP("port", "P", 0, "port to serve the mirror on")
+
+	rootCmd.PersistentFlags().
+		Bool("do-mirror-headers", true, "Directive to mirror all incoming headers to the mirrored server")
+
+	rootCmd.PersistentFlags().
+		Bool("do-mirror-body", true, "Directive to mirror request body to mirrored server (small performance hit)")
+
+	rootCmd.PersistentFlags().
+		StringArray("mirror-headers", []string{}, "Headers to add to the mirrored request. in the form of --mirror-headers header=value --mirror-headers header2=value2...")
+
+	rootCmd.PersistentFlags().
+		StringArray("primary-headers", []string{}, "Headers to add to the primary request. in the form of --primary-headers header=value --primary-headers header2=value2...")
 
 	viper.BindPFlags(rootCmd.PersistentFlags())
+	viper.BindPFlag("mirror.url", rootCmd.PersistentFlags().Lookup("mirror-url"))
+	viper.BindPFlag("primary.url", rootCmd.PersistentFlags().Lookup("primary-url"))
+	viper.BindPFlag("primary.do-mirror-headers", rootCmd.PersistentFlags().Lookup("do-mirror-headers"))
+	viper.BindPFlag("primary.do-mirror-body", rootCmd.PersistentFlags().Lookup("do-mirror-body"))
+
 }

@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/petereps/go_mirror/pkg/config"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,34 +17,29 @@ import (
 // mirrors request to a mirror server
 type Mirror struct {
 	*httputil.ReverseProxy
-	upstreamMirror *url.URL
-	client         *http.Client
+	client *http.Client
+	cfg    *config.Config
 }
 
 // New returns an initialized Mirror instance
-func New(primaryServer, mirrorServer string) (*Mirror, error) {
-	primaryServerURL, err := url.Parse(primaryServer)
-	if err != nil {
-		return nil, err
-	}
-
-	mirrorServerURL, err := url.Parse(mirrorServer)
+func New(cfg *config.Config) (*Mirror, error) {
+	primaryServerURL, err := url.Parse(cfg.Primary.URL)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Mirror{
 		httputil.NewSingleHostReverseProxy(primaryServerURL),
-		mirrorServerURL,
 		&http.Client{
 			Timeout: time.Minute * 1,
 		},
+		cfg,
 	}, nil
 }
 
 func (m *Mirror) mirror(proxyReq *http.Request) {
-	entry := logrus.WithField("url", proxyReq.URL.String())
-	entry.Infoln("mirroring")
+	entry := logrus.WithField("mirror_url", proxyReq.URL.String())
+	entry.Debugln("mirroring")
 	response, err := m.client.Do(proxyReq)
 	if err != nil {
 		entry.WithError(err).
@@ -62,32 +59,40 @@ func (m *Mirror) mirror(proxyReq *http.Request) {
 }
 
 func (m *Mirror) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// we need to buffer the body if we want to read it here and send it
-	// in the request.
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	mirroredURL := r.URL
-
-	mirroredURL.Host = m.upstreamMirror.Host
-	if mirroredURL.Scheme == "" {
-		mirroredURL.Scheme = "http"
-	}
 	proxyReq, proxyReqErr := http.NewRequest(
-		r.Method, mirroredURL.String(), r.Body,
+		r.Method, m.cfg.Mirror.URL, nil,
 	)
 	if proxyReqErr != nil {
-		logrus.WithError(err).
+		logrus.WithError(proxyReqErr).
 			Errorln("error creating mirroring request")
 	}
 
-	proxyReq.Header = r.Header
+	if m.cfg.Primary.DoMirrorBody {
+		// we need to buffer the body in order to send to both upstream
+		// requests
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
-	r.Body = ioutil.NopCloser(bytes.NewReader(body))
-	proxyReq.Body = ioutil.NopCloser(bytes.NewReader(body))
+		r.Body = ioutil.NopCloser(bytes.NewReader(body))
+		proxyReq.Body = ioutil.NopCloser(bytes.NewReader(body))
+	}
+
+	if m.cfg.Primary.DoMirrorHeaders {
+		for key, value := range r.Header {
+			proxyReq.Header.Set(key, value[0])
+		}
+	}
+
+	for _, header := range m.cfg.Mirror.Headers {
+		proxyReq.Header.Set(header.Key, header.Value)
+	}
+
+	for _, header := range m.cfg.Primary.Headers {
+		r.Header.Set(header.Key, header.Value)
+	}
 
 	if proxyReqErr == nil {
 		go m.mirror(proxyReq)
