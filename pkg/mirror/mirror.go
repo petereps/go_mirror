@@ -2,6 +2,7 @@ package mirror
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -59,8 +60,24 @@ func (m *Mirror) mirror(proxyReq *http.Request) {
 }
 
 func (m *Mirror) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	// add path and query string (doing this manually so things like localhost work to mirror)
+	path := r.URL.EscapedPath()
+	query := r.URL.RawQuery
+	proxyReqURL := m.cfg.Mirror.URL
+	lastChar := proxyReqURL[len(proxyReqURL)-1]
+	if lastChar == '/' {
+		proxyReqURL = proxyReqURL[:len(proxyReqURL)-2]
+	}
+	if query != "" {
+		query = "?" + query
+	}
+	proxyReqURL = fmt.Sprintf("%s%s%s", proxyReqURL, path, query)
+
+	logrus.WithField("mirror_url", proxyReqURL).Debugln()
+
 	proxyReq, proxyReqErr := http.NewRequest(
-		r.Method, m.cfg.Mirror.URL, nil,
+		r.Method, proxyReqURL, nil,
 	)
 	if proxyReqErr != nil {
 		logrus.WithError(proxyReqErr).

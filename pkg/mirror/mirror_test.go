@@ -255,3 +255,71 @@ func TestMirrorNoBody(t *testing.T) {
 	case <-done:
 	}
 }
+
+func TestPaths(t *testing.T) {
+	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/primary", r.URL.EscapedPath())
+		assert.Equal(t, "testing=123", r.URL.RawQuery)
+		println(r.URL.String())
+		w.Write([]byte("primary"))
+	})
+	backendServer := httptest.NewServer(assertBody(t, "hello", final))
+	defer backendServer.Close()
+
+	done := make(chan struct{})
+
+	mirrorFinal := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("mirror"))
+		println(r.URL.String())
+		assert.Equal(t, "testing=123", r.URL.RawQuery)
+		assert.Equal(t, "/mirror/primary", r.URL.EscapedPath())
+		close(done)
+	})
+
+	mirroredServer := httptest.NewServer(
+		assertBody(t, "", mirrorFinal),
+	)
+	defer mirroredServer.Close()
+
+	println(backendServer.URL)
+	println(mirroredServer.URL)
+
+	cfg := &config.Config{
+		Primary: config.PrimaryConfig{
+			URL:          backendServer.URL,
+			DoMirrorBody: false,
+		},
+		Mirror: config.MirrorConfig{
+			URL: mirroredServer.URL + "/mirror",
+		},
+	}
+	mirror, err := New(cfg)
+	assert.NoError(t, err)
+
+	mirrorProxy := httptest.NewServer(mirror)
+	defer mirrorProxy.Close()
+
+	body := strings.NewReader("hello")
+
+	proxyReq, err := http.NewRequest(
+		http.MethodPost,
+		mirrorProxy.URL+"/primary?testing=123",
+		body,
+	)
+	assert.NoError(t, err)
+
+	client := &http.Client{}
+
+	response, err := client.Do(proxyReq)
+	assert.NoError(t, err)
+
+	resStr, err := ioutil.ReadAll(response.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, string(resStr), "primary")
+
+	select {
+	case <-time.After(5 * time.Second):
+		panic("timed out waiting for mirror")
+	case <-done:
+	}
+}
