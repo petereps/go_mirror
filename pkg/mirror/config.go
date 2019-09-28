@@ -1,4 +1,4 @@
-package config
+package mirror
 
 import (
 	"net/http"
@@ -37,26 +37,24 @@ type Config struct {
 	LogFile    string `yaml:"log-file" toml:"log-file" mapstructure:"log-file"`
 }
 
-// HTTPHeaders parses headers into a valid http.Header
-func (c *MirrorConfig) HTTPHeaders() http.Header {
-	headers := http.Header(make(map[string][]string))
+func parsedHTTPHeaders(headers []Header) http.Header {
+	httpHeaders := http.Header(make(map[string][]string))
 
-	for _, header := range c.Headers {
-		headers[header.Key] = []string{header.Value}
+	for _, header := range headers {
+		httpHeaders[header.Key] = []string{header.Value}
 	}
 
-	return headers
+	return httpHeaders
+}
+
+// HTTPHeaders parses headers into a valid http.Header
+func (c *MirrorConfig) HTTPHeaders() http.Header {
+	return parsedHTTPHeaders(c.Headers)
 }
 
 // HTTPHeaders parses headers into a valid http.Header
 func (c *PrimaryConfig) HTTPHeaders() http.Header {
-	headers := http.Header(make(map[string][]string))
-
-	for _, header := range c.Headers {
-		headers[header.Key] = []string{header.Value}
-	}
-
-	return headers
+	return parsedHTTPHeaders(c.Headers)
 }
 
 // Option configures the configuration struct

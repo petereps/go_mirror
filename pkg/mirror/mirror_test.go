@@ -9,11 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/petereps/go_mirror/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
-func assertHeaders(t *testing.T, headers []config.Header, next http.Handler) http.Handler {
+func assertHeaders(t *testing.T, headers []Header, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, pair := range headers {
 			assert.Equal(t, pair.Value, r.Header.Get(pair.Key))
@@ -23,7 +22,7 @@ func assertHeaders(t *testing.T, headers []config.Header, next http.Handler) htt
 	})
 }
 
-func assertNoHeaders(t *testing.T, headers []config.Header, next http.Handler) http.Handler {
+func assertNoHeaders(t *testing.T, headers []Header, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, pair := range headers {
 			assert.Empty(t, r.Header.Get(pair.Key))
@@ -72,13 +71,13 @@ func TestMirrorProxyResponse(t *testing.T) {
 	mirroredServer := httptest.NewServer(assertBody(t, "hello", finalMirror))
 	defer mirroredServer.Close()
 
-	cfg := &config.Config{
-		Primary: config.PrimaryConfig{
+	cfg := &Config{
+		Primary: PrimaryConfig{
 			URL:             backendServer.URL,
 			DoMirrorBody:    true,
 			DoMirrorHeaders: true,
 		},
-		Mirror: config.MirrorConfig{URL: mirroredServer.URL},
+		Mirror: MirrorConfig{URL: mirroredServer.URL},
 	}
 	mirror, err := New(cfg)
 	assert.NoError(t, err)
@@ -120,12 +119,12 @@ func TestMirrorProxyHeaders(t *testing.T) {
 	primaryResponseCode := http.StatusAccepted
 	mirrorReceived := false
 
-	mirrorHeaders := []config.Header{
-		config.Header{
+	mirrorHeaders := []Header{
+		Header{
 			Key:   "x-my-header",
 			Value: "my-special-header",
 		},
-		config.Header{
+		Header{
 			Key:   "x-my-other-header",
 			Value: "my-other-special-header",
 		},
@@ -152,13 +151,13 @@ func TestMirrorProxyHeaders(t *testing.T) {
 	)
 	defer mirroredServer.Close()
 
-	cfg := &config.Config{
-		Primary: config.PrimaryConfig{
+	cfg := &Config{
+		Primary: PrimaryConfig{
 			URL:             backendServer.URL,
 			DoMirrorBody:    true,
 			DoMirrorHeaders: true,
 		},
-		Mirror: config.MirrorConfig{
+		Mirror: MirrorConfig{
 			URL:     mirroredServer.URL,
 			Headers: mirrorHeaders,
 		},
@@ -216,12 +215,12 @@ func TestMirrorNoBody(t *testing.T) {
 	)
 	defer mirroredServer.Close()
 
-	cfg := &config.Config{
-		Primary: config.PrimaryConfig{
+	cfg := &Config{
+		Primary: PrimaryConfig{
 			URL:          backendServer.URL,
 			DoMirrorBody: false,
 		},
-		Mirror: config.MirrorConfig{
+		Mirror: MirrorConfig{
 			URL: mirroredServer.URL,
 		},
 	}
@@ -284,12 +283,12 @@ func TestPaths(t *testing.T) {
 	println(backendServer.URL)
 	println(mirroredServer.URL)
 
-	cfg := &config.Config{
-		Primary: config.PrimaryConfig{
+	cfg := &Config{
+		Primary: PrimaryConfig{
 			URL:          backendServer.URL,
 			DoMirrorBody: false,
 		},
-		Mirror: config.MirrorConfig{
+		Mirror: MirrorConfig{
 			URL: mirroredServer.URL + "/mirror",
 		},
 	}

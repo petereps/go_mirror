@@ -22,8 +22,6 @@ import (
 
 	"github.com/petereps/go_mirror/pkg/mirror"
 
-	"github.com/petereps/go_mirror/pkg/config"
-
 	"github.com/spf13/viper"
 
 	"github.com/spf13/cobra"
@@ -35,7 +33,7 @@ var rootCmd = &cobra.Command{
 	Short: "Mirror http requests to a different backend for testing or logging",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		opts := []config.Option{}
+		opts := []mirror.Option{}
 
 		cfgFile := os.Getenv("FILE")
 		if cfgFile == "" {
@@ -43,10 +41,10 @@ var rootCmd = &cobra.Command{
 		}
 
 		if cfgFile != "" {
-			opts = append(opts, config.WithConfigFile(cfgFile))
+			opts = append(opts, mirror.WithConfigFile(cfgFile))
 		}
 
-		cfg, err := config.InitConfig(opts...)
+		cfg, err := mirror.InitConfig(opts...)
 		if err != nil {
 			panic(err)
 		}

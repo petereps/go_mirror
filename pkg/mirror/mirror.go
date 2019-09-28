@@ -9,8 +9,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/petereps/go_mirror/pkg/config"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -19,11 +17,11 @@ import (
 type Mirror struct {
 	*httputil.ReverseProxy
 	client *http.Client
-	cfg    *config.Config
+	cfg    *Config
 }
 
 // New returns an initialized Mirror instance
-func New(cfg *config.Config) (*Mirror, error) {
+func New(cfg *Config) (*Mirror, error) {
 	primaryServerURL, err := url.Parse(cfg.Primary.URL)
 	if err != nil {
 		return nil, err
