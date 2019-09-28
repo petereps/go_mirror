@@ -1,7 +1,0 @@
-time="2019-09-27T14:43:58-06:00" level=info msg="using file output" file=./logs/log.txt
-time="2019-09-27T14:44:02-06:00" level=debug msg=mirroring mirror_url="http://127.0.0.1:8000"
-time="2019-09-27T14:44:02-06:00" level=debug msg="mirrored response" mirror_url="http://127.0.0.1:8000" response=MirrorRecieve
-time="2019-09-27T14:44:04-06:00" level=debug msg=mirroring mirror_url="http://127.0.0.1:8000"
-time="2019-09-27T14:44:04-06:00" level=debug msg="mirrored response" mirror_url="http://127.0.0.1:8000" response=MirrorRecieve
-time="2019-09-27T14:44:05-06:00" level=debug msg=mirroring mirror_url="http://127.0.0.1:8000"
-time="2019-09-27T14:44:05-06:00" level=debug msg="mirrored response" mirror_url="http://127.0.0.1:8000" response=MirrorRecieve
