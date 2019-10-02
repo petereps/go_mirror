@@ -59,14 +59,14 @@ func (m *Mirror) mirror(proxyReq *http.Request) {
 	response, err := m.client.Do(proxyReq)
 	if err != nil {
 		entry.WithError(err).
-			Errorln("error in mirrored request")
+			Debugln("error in mirrored request")
 		return
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		entry.WithError(err).
-			Errorln("error reading mirrored request")
+			Debugln("error reading mirrored request")
 		return
 	}
 
