@@ -54,8 +54,6 @@ func (d *DNSResolver) ReverseProxy(target *url.URL) *httputil.ReverseProxy {
 		if address == "" {
 			logrus.Errorf("no host found in docker for request host %s. Defering to system dns", lookup)
 			address = lookup
-		} else {
-			logrus.WithField("ip", address).Infoln("found")
 		}
 
 		if target.Port() != "" {
