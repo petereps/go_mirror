@@ -48,7 +48,7 @@ func (d *DNSResolver) ReverseProxy(target *url.URL) *httputil.ReverseProxy {
 
 	director := func(req *http.Request) {
 		req.URL.Scheme = target.Scheme
-		lookup := target.Host
+		lookup := target.Hostname()
 
 		address := d.IPAddress(lookup)
 		if address == "" {
@@ -56,6 +56,10 @@ func (d *DNSResolver) ReverseProxy(target *url.URL) *httputil.ReverseProxy {
 			address = lookup
 		} else {
 			logrus.WithField("ip", address).Infoln("found")
+		}
+
+		if target.Port() != "" {
+			address = address + ":" + target.Port()
 		}
 
 		req.URL.Host = address

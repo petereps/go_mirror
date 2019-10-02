@@ -27,7 +27,9 @@ primary:
   # copy all primary headers to the mirror
   do-mirror-headers: true
   do-mirror-body: true
-
+  docker-lookup-config: 
+    enabled: true
+    host-identifier: HOST
   headers:
     - key: X-Primary-Header
       value: example-header
@@ -61,6 +63,9 @@ func TestConfigFile(t *testing.T) {
 
 	primaryHeaders := cfg.Primary.HTTPHeaders()
 	assert.Equal(t, testPrimaryHeaders, primaryHeaders)
+
+	assert.True(t, cfg.Primary.DockerLookup.Enabled)
+	assert.Equal(t, "HOST", cfg.Primary.DockerLookup.HostIdentifier)
 }
 
 func TestConfigFlags(t *testing.T) {
