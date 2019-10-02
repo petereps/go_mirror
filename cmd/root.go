@@ -20,7 +20,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/petereps/go_mirror/pkg/mirror"
+	"github.com/petereps/gomirror/pkg/mirror"
 
 	"github.com/spf13/viper"
 
@@ -29,7 +29,7 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "go_mirror",
+	Use:   "gomirror",
 	Short: "Mirror http requests to a different backend for testing or logging",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {

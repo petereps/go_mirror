@@ -34,7 +34,7 @@ type PrimaryConfig struct {
 	DockerLookup DockerLookupConfig `yaml:"docker-lookup-config" toml:"docker-lookup-config" mapstructure:"docker-lookup-config"`
 }
 
-// Config represents all the config for go_mirror
+// Config represents all the config for gomirror
 type Config struct {
 	ConfigFile string `yaml:"file" toml:"file" mapstructure:"file"`
 	Port       int

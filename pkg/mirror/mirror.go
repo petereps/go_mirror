@@ -3,7 +3,7 @@ package mirror
 import (
 	"log"
 
-	"github.com/petereps/go_mirror/pkg/docker"
+	"github.com/petereps/gomirror/pkg/docker"
 
 	"bytes"
 	"fmt"

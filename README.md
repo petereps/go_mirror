@@ -1,3 +1,3 @@
-# go_mirror
+# gomirror
 
-go_mirror is a library to mirror http requests to different servers.
+gomirror is a library to mirror http requests to different servers.

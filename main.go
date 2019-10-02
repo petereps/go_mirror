@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/petereps/go_mirror/cmd"
+import "github.com/petereps/gomirror/cmd"
 
 func main() {
   cmd.Execute()

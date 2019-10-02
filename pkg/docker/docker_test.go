@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/petereps/go_mirror/pkg/testutils"
+	"github.com/petereps/gomirror/pkg/testutils"
 
 	"github.com/stretchr/testify/assert"
 

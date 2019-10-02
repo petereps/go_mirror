@@ -45,7 +45,7 @@ var testPrimaryHeaders = http.Header(map[string][]string{
 })
 
 func TestConfigFile(t *testing.T) {
-	cfgFile := "/tmp/go_mirror_config.yaml"
+	cfgFile := "/tmp/gomirror_config.yaml"
 
 	err := ioutil.WriteFile(cfgFile, []byte(testConfig), 0644)
 	defer os.Remove(cfgFile)

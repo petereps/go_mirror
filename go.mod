@@ -1,4 +1,4 @@
-module github.com/petereps/go_mirror
+module github.com/petereps/gomirror
 
 go 1.12
 
