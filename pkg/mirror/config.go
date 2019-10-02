@@ -20,11 +20,18 @@ type MirrorConfig struct {
 	Headers []Header
 }
 
+type DockerLookupConfig struct {
+	HostIdentifier string `yaml:"host-identifier" toml:"host-identifier" mapstructure:"host-identifier"`
+	Enabled        bool
+}
+
 type PrimaryConfig struct {
 	URL             string
 	Headers         []Header
 	DoMirrorHeaders bool `yaml:"do-mirror-headers" toml:"do-mirror-headers" mapstructure:"do-mirror-headers"`
 	DoMirrorBody    bool `yaml:"do-mirror-body" toml:"do-mirror-body" mapstructure:"do-mirror-body"`
+	// Lookup the domain in docker based on HostIdentifier
+	DockerLookup DockerLookupConfig `yaml:"docker-lookup-config" toml:"docker-lookup-config" mapstructure:"docker-lookup-config"`
 }
 
 // Config represents all the config for go_mirror
@@ -35,6 +42,7 @@ type Config struct {
 	Primary    PrimaryConfig
 	LogLevel   string `yaml:"log-level" toml:"log-level" mapstructure:"log-level"`
 	LogFile    string `yaml:"log-file" toml:"log-file" mapstructure:"log-file"`
+	viper      *viper.Viper
 }
 
 func parsedHTTPHeaders(headers []Header) http.Header {
@@ -69,11 +77,17 @@ var WithConfigFile = func(configFile string) Option {
 	}
 }
 
+// WithViper uses a custom viper instance
+var WithViper = func(v *viper.Viper) Option {
+	return func(cfg *Config) error {
+		cfg.viper = v
+		return nil
+	}
+}
+
 // InitConfig returns a Config struct,
 // configured by the opts provided
 func InitConfig(opts ...Option) (*Config, error) {
-	viper.AutomaticEnv()
-
 	cfg := new(Config)
 	for _, opt := range opts {
 		if err := opt(cfg); err != nil {
@@ -81,6 +95,11 @@ func InitConfig(opts ...Option) (*Config, error) {
 		}
 	}
 
+	if cfg.viper == nil {
+		cfg.viper = viper.GetViper()
+	}
+
+	viper := cfg.viper
 	if cfg.ConfigFile != "" {
 		viper.SetConfigFile(cfg.ConfigFile)
 		if err := viper.ReadInConfig(); err != nil {

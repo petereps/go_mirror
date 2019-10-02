@@ -1,6 +1,10 @@
 package mirror
 
 import (
+	"log"
+
+	"github.com/petereps/go_mirror/pkg/docker"
+
 	"bytes"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +12,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"time"
+
+	"github.com/docker/docker/client"
 
 	"github.com/sirupsen/logrus"
 )
@@ -27,8 +33,19 @@ func New(cfg *Config) (*Mirror, error) {
 		return nil, err
 	}
 
+	proxy := httputil.NewSingleHostReverseProxy(primaryServerURL)
+	if cfg.Primary.DockerLookup.Enabled {
+		cli, err := client.NewEnvClient()
+		if err != nil {
+			log.Fatalf("could not get docker client: %+v", err)
+		}
+
+		dockerDNS := docker.NewDNSResolver(cli, cfg.Primary.DockerLookup.HostIdentifier)
+		proxy = dockerDNS.ReverseProxy(primaryServerURL)
+	}
+
 	return &Mirror{
-		httputil.NewSingleHostReverseProxy(primaryServerURL),
+		proxy,
 		&http.Client{
 			Timeout: time.Minute * 1,
 		},
@@ -58,7 +75,6 @@ func (m *Mirror) mirror(proxyReq *http.Request) {
 }
 
 func (m *Mirror) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
 	// add path and query string (doing this manually so things like localhost work to mirror)
 	path := r.URL.EscapedPath()
 	query := r.URL.RawQuery

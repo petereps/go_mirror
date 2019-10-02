@@ -1,7 +1,7 @@
 # port that this proxy will listen on
 port: 8080
 
-log-level: debug
+log-level: info 
 
 mirror:
   url: https://google.com 

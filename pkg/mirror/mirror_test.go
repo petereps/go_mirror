@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/petereps/go_mirror/pkg/testutils"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -315,6 +317,98 @@ func TestPaths(t *testing.T) {
 	resStr, err := ioutil.ReadAll(response.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, string(resStr), "primary")
+
+	select {
+	case <-time.After(5 * time.Second):
+		panic("timed out waiting for mirror")
+	case <-done:
+	}
+}
+
+func TestDockerProxy(t *testing.T) {
+	r := testutils.GetServerContainer()
+	r.Expire(30)
+
+	done := make(chan struct{})
+
+	mirrorFinal := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("mirror"))
+		println(r.URL.String())
+		assert.Equal(t, "testing=123", r.URL.RawQuery)
+		assert.Equal(t, "/mirror/primary", r.URL.EscapedPath())
+		close(done)
+	})
+
+	mirroredServer := httptest.NewServer(
+		assertBody(t, "", mirrorFinal),
+	)
+	defer mirroredServer.Close()
+
+	cfg := &Config{
+		Primary: PrimaryConfig{
+			URL:          "http://testing-app.com",
+			DoMirrorBody: false,
+			DockerLookup: DockerLookupConfig{
+				Enabled:        true,
+				HostIdentifier: "VIRTUAL_HOST",
+			},
+		},
+		Mirror: MirrorConfig{
+			URL: mirroredServer.URL + "/mirror",
+		},
+	}
+	mirror, err := New(cfg)
+	assert.NoError(t, err)
+
+	mirrorProxy := httptest.NewServer(mirror)
+	defer mirrorProxy.Close()
+
+	proxyReq, err := http.NewRequest(
+		http.MethodGet,
+		mirrorProxy.URL+"/primary?testing=123",
+		nil,
+	)
+	assert.NoError(t, err)
+
+	client := &http.Client{}
+
+	response, err := client.Do(proxyReq)
+	assert.NoError(t, err)
+
+	resStr, err := ioutil.ReadAll(response.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, string(resStr), "hello world")
+
+	select {
+	case <-time.After(5 * time.Second):
+		panic("timed out waiting for mirror")
+	case <-done:
+	}
+
+	done = make(chan struct{})
+	// change the ip
+	r2 := testutils.GetServerContainer()
+	defer r2.Close()
+	r2.Expire(30)
+
+	r.Close()
+	<-time.After(5 * time.Second)
+
+	proxyReq, err = http.NewRequest(
+		http.MethodGet,
+		mirrorProxy.URL+"/primary?testing=123",
+		nil,
+	)
+	assert.NoError(t, err)
+
+	client = &http.Client{}
+
+	response, err = client.Do(proxyReq)
+	assert.NoError(t, err)
+
+	resStr, err = ioutil.ReadAll(response.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, string(resStr), "hello world")
 
 	select {
 	case <-time.After(5 * time.Second):

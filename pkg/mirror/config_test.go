@@ -64,14 +64,16 @@ func TestConfigFile(t *testing.T) {
 }
 
 func TestConfigFlags(t *testing.T) {
+	v := viper.New()
 
-	viper.Set("primary-headers", "X-Primary-Header=example-header")
-	viper.Set("mirror-headers", "X-Mirror-Header=example-header")
+	v.Set("primary-headers", "X-Primary-Header=example-header")
+	v.Set("mirror-headers", "X-Mirror-Header=example-header")
 
-	cfg, err := InitConfig()
+	cfg, err := InitConfig(WithViper(v))
 	assert.NoError(t, err)
 
-	assert.Empty(t, viper.ConfigFileUsed())
+	assert.Empty(t, v.ConfigFileUsed())
+
 	headers := cfg.Mirror.HTTPHeaders()
 	assert.Equal(t, testMirrorHeaders, headers)
 
